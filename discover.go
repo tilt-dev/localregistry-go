@@ -1,0 +1,3 @@
+package localregistry
+
+// for setup
