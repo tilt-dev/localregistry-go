@@ -2,10 +2,14 @@ package localregistry
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	ktesting "k8s.io/client-go/testing"
@@ -43,5 +47,23 @@ func TestDiscoverNotFound(t *testing.T) {
 	hosting, err := Discover(context.Background(), core)
 
 	require.NoError(t, err)
+	assert.Equal(t, LocalRegistryHostingV1{}, hosting)
+}
+
+func TestDiscoverForbidden(t *testing.T) {
+	cs := &fake.Clientset{}
+	cs.AddReactor("*", "*", func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, nil, &errors.StatusError{
+			ErrStatus: metav1.Status{
+				Message: "unknown",
+				Reason:  "Forbidden",
+				Code:    http.StatusForbidden,
+			},
+		}
+	})
+
+	core := cs.CoreV1()
+	hosting, err := Discover(context.Background(), core)
+	assert.NoError(t, err)
 	assert.Equal(t, LocalRegistryHostingV1{}, hosting)
 }
