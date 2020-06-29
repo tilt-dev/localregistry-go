@@ -26,7 +26,7 @@ go install github.com/tilt-dev/localregistry-go/cmd/kubectl-local_registry
 
 Run:
 
-``
+```
 kubectl local-registry get
 ```
 
