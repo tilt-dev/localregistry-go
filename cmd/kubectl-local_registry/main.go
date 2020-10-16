@@ -14,14 +14,20 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
+var cf *genericclioptions.ConfigFlags
+
 var rootCmd = &cobra.Command{
-	Use:   "kubectl-local-registry",
+	Use:   "local-registry [command]",
 	Short: "Kubectl plugin for interacting with local registries",
+	Example: "  kubectl local-registry get\n" +
+		"  kubectl local-registry get --context=microk8s",
 }
 
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get the local registry advertised by the cluster",
+	Example: "  kubectl local-registry get\n" +
+		"  kubectl local-registry get --context=microk8s",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
 		core, err := core()
@@ -45,7 +51,11 @@ var getCmd = &cobra.Command{
 }
 
 func main() {
+	cf = genericclioptions.NewConfigFlags(true)
+	cf.AddFlags(getCmd.Flags())
+
 	rootCmd.AddCommand(getCmd)
+
 	err := rootCmd.Execute()
 	if err != nil {
 		// Cobra already printed the error
@@ -54,8 +64,7 @@ func main() {
 }
 
 func core() (v1.CoreV1Interface, error) {
-	flags := genericclioptions.NewConfigFlags(true)
-	config, err := flags.ToRESTConfig()
+	config, err := cf.ToRESTConfig()
 	if err != nil {
 		return nil, err
 	}
